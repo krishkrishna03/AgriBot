@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+pymongo
+passlib[bcrypt]
+python-jose[cryptography]
+scikit-learn
+nltk
+numpy
+pydantic
+python-multipart
+pandas
+openpyxl
+xlrd
+joblib

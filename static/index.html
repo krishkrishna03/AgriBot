@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgriBot — AI Agriculture Assistant</title>
+  <meta name="description" content="AgriBot: Your AI-powered agriculture assistant for crop guidance, government schemes, soil, and farming advice." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+</head>
+<body>
+
+<!-- ╔══════════════════════════════╗ -->
+<!-- ║      AUTH OVERLAY            ║ -->
+<!-- ╚══════════════════════════════╝ -->
+<div id="auth-overlay">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+      <span>AgriBot</span>
+    </div>
+    <p class="auth-subtitle">Your AI-powered agriculture assistant</p>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Login</button>
+      <button class="auth-tab" id="tab-register" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <form id="auth-form" onsubmit="handleAuth(event)">
+      <div class="field">
+        <i data-lucide="user"></i>
+        <input type="text" id="username" placeholder="Username" autocomplete="username" required />
+      </div>
+      <div class="field">
+        <i data-lucide="lock"></i>
+        <input type="password" id="password" placeholder="Password" autocomplete="current-password" required />
+      </div>
+      <div class="err-msg" id="auth-error"></div>
+      <button type="submit" class="btn-primary" id="auth-btn">Login</button>
+    </form>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════╗ -->
+<!-- ║  MAIN APPLICATION            ║ -->
+<!-- ╚══════════════════════════════╝ -->
+<div id="app-container" style="display:none;">
+
+  <!-- ── Sidebar ─────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+        AgriBot
+      </div>
+    </div>
+
+    <button class="btn-new-chat" onclick="startNewChat()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Chat
+    </button>
+
+    <div class="history-label">Recent Conversations</div>
+    <div class="history-list" id="history-list"></div>
+
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Log out (<span id="current-user-label"></span>)
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Chat Area ───────────────────────── -->
+  <main class="chat-area" id="chat-area">
+
+    <!-- Header -->
+    <header class="chat-header">
+      <button class="btn-toggle" id="btn-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="toggle-icon-menu"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+
+      <div class="header-brand">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+        AgriBot
+      </div>
+      <div class="header-status">
+        <span class="status-dot"></span>
+        Online
+      </div>
+
+      <div class="header-spacer"></div>
+      <div class="header-info">NLP · KNN Model</div>
+    </header>
+
+    <!-- Messages -->
+    <div id="chat-messages">
+      <!-- Welcome screen shown when no messages -->
+      <div class="welcome-screen" id="welcome-screen">
+        <div class="welcome-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+        </div>
+        <h2>How can I help you today?</h2>
+        <p>Ask me anything about farming, crops, soil, government schemes, irrigation, pest control, and more.</p>
+        <div class="suggestion-grid">
+          <div class="suggestion-chip" onclick="useChip(this)">
+            <span class="chip-icon">🌾</span>Best crops for monsoon season in India
+          </div>
+          <div class="suggestion-chip" onclick="useChip(this)">
+            <span class="chip-icon">🏛️</span>Tell me about PM-KISAN scheme
+          </div>
+          <div class="suggestion-chip" onclick="useChip(this)">
+            <span class="chip-icon">🌿</span>How to improve soil fertility naturally?
+          </div>
+          <div class="suggestion-chip" onclick="useChip(this)">
+            <span class="chip-icon">💧</span>Explain drip irrigation benefits
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit overlay -->
+    <div id="edit-overlay">
+      <div class="edit-card">
+        <h3>✏️ Edit Message</h3>
+        <textarea id="edit-textarea" rows="4" placeholder="Edit your message..."></textarea>
+        <div class="edit-actions">
+          <button class="btn-secondary" onclick="closeEdit()">Cancel</button>
+          <button class="btn-send-edit" onclick="submitEdit()">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input area -->
+    <div class="input-area">
+      <form id="chat-form" onsubmit="sendMessage(event)">
+        <div class="input-bar">
+          <textarea
+            id="chat-input"
+            placeholder="Message AgriBot…"
+            rows="1"
+            autocomplete="off"
+          ></textarea>
+          <button type="submit" class="btn-send" title="Send">
+            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+        <div class="input-hint">AgriBot uses NLP & KNN — verify critical farming decisions with a local agronomist.</div>
+      </form>
+    </div>
+  </main>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
