@@ -178,8 +178,10 @@ async def serve_frontend():
 
 if __name__ == "__main__":
     import uvicorn
-    # Make sure static directory exists
+    import os
+
     if not os.path.exists("static"):
         os.makedirs("static")
-    # ✅ Open this in your browser: http://localhost:8000
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+
+    port = int(os.environ.get("PORT", 8000))  # IMPORTANT
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
