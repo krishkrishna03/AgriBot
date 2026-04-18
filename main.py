@@ -1,8 +1,8 @@
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 from pymongo import MongoClient
 from passlib.context import CryptContext
@@ -172,8 +172,11 @@ async def admin_reload_model(current_user: dict = Depends(get_current_user)):
 # Serve static files for frontend
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-@app.get("/")
-async def serve_frontend():
+@app.api_route("/", methods=["GET", "HEAD"])
+async def serve_frontend(request: Request):
+    # Let health checks use HEAD without triggering a 405 on the root path.
+    if request.method == "HEAD":
+        return Response(status_code=200)
     return FileResponse("static/index.html")
 
 if __name__ == "__main__":
