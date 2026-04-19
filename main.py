@@ -18,15 +18,20 @@ SECRET_KEY = "super_secret_key_for_agribot"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# MongoDB connect (default localhost:27017 for compass)
-MONGO_DETAILS = "mongodb+srv://patnalasrikrishnasai:Login@cluster0.igezekd.mongodb.net/agribot"
+# MongoDB connect (default localhost:27017 for local development)
+MONGO_DETAILS = os.environ.get("MONGO_DETAILS", "mongodb+srv://patnalasrikrishnasai:Login@cluster0.igezekd.mongodb.net/agribot")
+client = None
+db = None
+users_collection = None
+chats_collection = None
 try:
     client = MongoClient(MONGO_DETAILS, serverSelectionTimeoutMS=5000)
+    client.admin.command("ping")
     db = client.agribot_db
     users_collection = db.get_collection("users")
     chats_collection = db.get_collection("chats")
 except Exception as e:
-    print("Warning: Could not connect to MongoDB. Make sure MongoDB is running.")
+    print(f"Warning: Could not connect to MongoDB at {MONGO_DETAILS}: {e}")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -71,7 +76,15 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+def ensure_database_ready():
+    if users_collection is None or chats_collection is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Database unavailable. Start MongoDB and restart the server.",
+        )
+
 def get_current_user(token: str = Depends(oauth2_scheme)):
+    ensure_database_ready()
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -92,6 +105,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
 # Routes
 @app.post("/register")
 async def register(user: UserCreate):
+    ensure_database_ready()
     existing_user = users_collection.find_one({"username": user.username})
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already registered")
@@ -102,6 +116,7 @@ async def register(user: UserCreate):
 
 @app.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    ensure_database_ready()
     user = users_collection.find_one({"username": form_data.username})
     if not user or not verify_password(form_data.password, user["hashed_password"]):
         raise HTTPException(
@@ -117,6 +132,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 @app.post("/chat")
 async def chat(message_data: ChatMessage, current_user: dict = Depends(get_current_user)):
+    ensure_database_ready()
     user_msg = message_data.message
     bot_msg = get_chatbot_response(user_msg)
     
@@ -133,6 +149,7 @@ async def chat(message_data: ChatMessage, current_user: dict = Depends(get_curre
 
 @app.get("/history")
 async def get_history(current_user: dict = Depends(get_current_user)):
+    ensure_database_ready()
     cursor = chats_collection.find({"username": current_user["username"]}).sort("timestamp", 1)
     history = []
     for doc in cursor:
