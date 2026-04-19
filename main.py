@@ -33,7 +33,7 @@ try:
 except Exception as e:
     print(f"Warning: Could not connect to MongoDB at {MONGO_DETAILS}: {e}")
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 app = FastAPI(title="AgriBot API")
@@ -106,29 +106,40 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
 @app.post("/register")
 async def register(user: UserCreate):
     ensure_database_ready()
-    existing_user = users_collection.find_one({"username": user.username})
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Username already registered")
-    
-    hashed_password = get_password_hash(user.password)
-    users_collection.insert_one({"username": user.username, "hashed_password": hashed_password})
-    return {"message": "User created successfully"}
+    try:
+        existing_user = users_collection.find_one({"username": user.username})
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Username already registered")
+        hashed_password = get_password_hash(user.password)
+        users_collection.insert_one({"username": user.username, "hashed_password": hashed_password})
+        return {"message": "User created successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Register error: {e}")
+        raise HTTPException(status_code=500, detail="Registration failed due to server error")
 
 @app.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     ensure_database_ready()
-    user = users_collection.find_one({"username": form_data.username})
-    if not user or not verify_password(form_data.password, user["hashed_password"]):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
+    try:
+        user = users_collection.find_one({"username": form_data.username})
+        if not user or not verify_password(form_data.password, user["hashed_password"]):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": user["username"]}, expires_delta=access_token_expires
         )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user["username"]}, expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
+        return {"access_token": access_token, "token_type": "bearer"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Login error: {e}")
+        raise HTTPException(status_code=500, detail="Login failed due to server error")
 
 @app.post("/chat")
 async def chat(message_data: ChatMessage, current_user: dict = Depends(get_current_user)):
