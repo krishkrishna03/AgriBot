@@ -16,6 +16,10 @@ const API = 'https://agribot-pjdo.onrender.com';
 const STORE  = 'agribot_token';
 const USTORE = 'agribot_username';
 
+// Debug: log the API endpoint being used
+console.log('[AgriBot] API endpoint:', API);
+
+
 /* ── State ──────────────────────────────────────────── */
 let token          = localStorage.getItem(STORE)  || null;
 let currentUser    = localStorage.getItem(USTORE) || null;
