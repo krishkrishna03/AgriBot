@@ -93,6 +93,15 @@ function showApp() {
   setTimeout(refreshIcons, 50);
 }
 
+async function parseResponse(response) {
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    return await response.json();
+  }
+  const text = await response.text();
+  return { detail: text || response.statusText };
+}
+
 async function handleAuth(e) {
   e.preventDefault();
   const username = document.getElementById('username').value.trim();
@@ -106,7 +115,7 @@ async function handleAuth(e) {
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ username, password }),
       });
-      const d = await r.json();
+      const d = await parseResponse(r);
       if (!r.ok) throw new Error(d.detail || 'Registration failed');
     }
     await doLogin(username, password);
@@ -122,7 +131,7 @@ async function doLogin(username, password) {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body,
   });
-  const d = await r.json();
+  const d = await parseResponse(r);
   if (!r.ok) throw new Error(d.detail || 'Login failed');
 
   token       = d.access_token;
@@ -178,11 +187,15 @@ async function sendMessage(e) {
 
     if (r.status === 401) { logout(); return; }
 
-    const d = await r.json();
+    const d = await parseResponse(r);
     typingEl.remove();
-    appendBotMsg(d.reply);
+    if (!r.ok) {
+      appendBotMsg(d.detail || 'Server error while sending message.');
+    } else {
+      appendBotMsg(d.reply);
+      loadHistory();
+    }
     scrollBottom();
-    loadHistory();
   } catch {
     typingEl.remove();
     appendBotMsg('⚠️ Could not reach the server. Please ensure the server is running.');
