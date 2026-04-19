@@ -41,6 +41,12 @@ const editTextarea   = document.getElementById('edit-textarea');
 
 let currentTab = 'login';
 
+function refreshIcons() {
+  if (typeof window.lucide !== 'undefined' && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+}
+
 /* ══════════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════════ */
@@ -79,14 +85,14 @@ function switchTab(tab) {
 function showAuth() {
   authOverlay.classList.add('active');
   appContainer.style.display = 'none';
-  setTimeout(() => lucide.createIcons(), 50);
+  setTimeout(refreshIcons, 50);
 }
 
 function showApp() {
   authOverlay.classList.remove('active');
   appContainer.style.display = 'flex';
   userLabel.textContent = currentUser || '';
-  setTimeout(() => lucide.createIcons(), 50);
+  setTimeout(refreshIcons, 50);
 }
 
 async function handleAuth(e) {
