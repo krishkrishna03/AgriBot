@@ -12,7 +12,9 @@
    • Auto-resizing textarea
 ────────────────────────────────────────────────────────────── */
 
-const API    = 'http://localhost:8000';
+const API    = window.location.origin && window.location.origin.startsWith('http')
+  ? window.location.origin
+  : 'http://localhost:8000';
 const STORE  = 'agribot_token';
 const USTORE = 'agribot_username';
 
