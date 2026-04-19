@@ -12,9 +12,12 @@
    • Auto-resizing textarea
 ────────────────────────────────────────────────────────────── */
 
-const API    = window.location.origin && window.location.origin.startsWith('http')
-  ? window.location.origin
-  : 'http://localhost:8000';
+const API = (() => {
+  if (window.location.origin && window.location.origin.startsWith('http')) {
+    return window.location.origin;
+  }
+  return 'https://agribot-pjdo.onrender.com';
+})();
 const STORE  = 'agribot_token';
 const USTORE = 'agribot_username';
 
