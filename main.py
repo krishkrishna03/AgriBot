@@ -19,7 +19,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 # MongoDB connect (default localhost:27017 for compass)
-MONGO_DETAILS = "mongodb://localhost:27017"
+MONGO_DETAILS = "mongodb+srv://patnalasrikrishnasai:Login@cluster0.igezekd.mongodb.net/agribot"
 try:
     client = MongoClient(MONGO_DETAILS, serverSelectionTimeoutMS=5000)
     db = client.agribot_db
